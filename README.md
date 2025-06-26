@@ -10,6 +10,14 @@ Simple dashboard for new tab page.
 
 ## 🚀 Installation
 
+### Option 1: Use Live Demo (Recommended)
+1. Go to: https://new-tab-dashboard.vercel.app/
+2. Click "Install" or "Add to home screen" in your browser
+3. Set as new tab page in browser:
+   - Chrome: `chrome://settings/` → "New tab page" → `https://new-tab-dashboard.vercel.app/`
+   - Firefox: `about:preferences#home` → "New tab" → `https://new-tab-dashboard.vercel.app/`
+
+### Option 2: Local Installation
 1. Download and open:
 ```bash
 git clone <repository-url>
