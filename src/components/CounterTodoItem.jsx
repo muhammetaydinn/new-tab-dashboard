@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Plus, Minus, Target, Edit } from "lucide-react";
 
@@ -7,6 +7,9 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
   const [editText, setEditText] = useState(todo.text);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [editTarget, setEditTarget] = useState(todo.targetCount.toString());
+
+  const incrementIntervalRef = useRef(null);
+  const decrementIntervalRef = useRef(null);
 
   const handleTextChange = (e) => {
     setEditText(e.target.value);
@@ -53,8 +56,42 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
     onUpdate(todo.id, { currentCount: newCount });
   };
 
+  // Otomatik artırma
+  const startIncrement = () => {
+    increment();
+    incrementIntervalRef.current = setInterval(() => {
+      increment();
+    }, 150); // 150ms aralıklarla
+  };
+
+  const stopIncrement = () => {
+    if (incrementIntervalRef.current) {
+      clearInterval(incrementIntervalRef.current);
+      incrementIntervalRef.current = null;
+    }
+  };
+
+  // Otomatik azaltma
+  const startDecrement = () => {
+    decrement();
+    decrementIntervalRef.current = setInterval(() => {
+      decrement();
+    }, 150); // 150ms aralıklarla
+  };
+
+  const stopDecrement = () => {
+    if (decrementIntervalRef.current) {
+      clearInterval(decrementIntervalRef.current);
+      decrementIntervalRef.current = null;
+    }
+  };
+
   const progressPercentage = (todo.currentCount / todo.targetCount) * 100;
   const isCompleted = todo.currentCount >= todo.targetCount;
+
+  // Progress ile birlikte yeşil rengin yoğunluğunu artır
+  const greenOpacity = 0.05 + (progressPercentage / 100) * 0.25; // 0.05'ten 0.3'e
+  const greenIntensity = 0.1 + (progressPercentage / 100) * 0.2; // 0.1'den 0.3'e
 
   return (
     <motion.div
@@ -66,7 +103,7 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
         isCompleted ? "opacity-60" : ""
       }`}
       style={{
-        background: `linear-gradient(90deg, rgba(34, 197, 94, 0.1) ${progressPercentage}%, var(--glass-bg) ${progressPercentage}%)`,
+        background: `linear-gradient(90deg, rgba(34, 197, 94, ${greenOpacity}) ${progressPercentage}%, var(--glass-bg) ${progressPercentage}%)`,
         border: "1px solid var(--glass-border)",
         backdropFilter: "blur(16px)",
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
@@ -76,7 +113,7 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
       <div
         className="absolute inset-0 transition-all duration-500 ease-out"
         style={{
-          background: `linear-gradient(90deg, rgba(34, 197, 94, 0.15) ${progressPercentage}%, transparent ${progressPercentage}%)`,
+          background: `linear-gradient(90deg, rgba(34, 197, 94, ${greenIntensity}) ${progressPercentage}%, transparent ${progressPercentage}%)`,
           zIndex: 0,
         }}
       />
@@ -122,9 +159,13 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={decrement}
+            onMouseDown={startDecrement}
+            onMouseUp={stopDecrement}
+            onMouseLeave={stopDecrement}
+            onTouchStart={startDecrement}
+            onTouchEnd={stopDecrement}
             disabled={todo.currentCount <= 0}
-            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
           >
             <Minus size={16} />
           </motion.button>
@@ -141,9 +182,13 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={increment}
+            onMouseDown={startIncrement}
+            onMouseUp={stopIncrement}
+            onMouseLeave={stopIncrement}
+            onTouchStart={startIncrement}
+            onTouchEnd={stopIncrement}
             disabled={todo.currentCount >= todo.targetCount}
-            className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
           >
             <Plus size={16} />
           </motion.button>
