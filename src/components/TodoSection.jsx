@@ -7,9 +7,11 @@ import {
   ChevronDown,
   ChevronUp,
   List,
+  Target,
 } from "lucide-react";
 import TodoItem from "./TodoItem";
 import StepTodoItem from "./StepTodoItem";
+import CounterTodoItem from "./CounterTodoItem";
 
 const TodoSection = () => {
   const [todos, setTodos] = useState([]);
@@ -65,6 +67,20 @@ const TodoSection = () => {
     saveTodos([...todos, newStepTodo]);
   };
 
+  // Yeni sayaçlı yapılacak ekle
+  const addCounterTodo = () => {
+    const newCounterTodo = {
+      id: Date.now(),
+      text: "Yeni sayaçlı görev",
+      completed: false,
+      createdAt: new Date().toISOString(),
+      type: "counter",
+      currentCount: 0,
+      targetCount: 30,
+    };
+    saveTodos([...todos, newCounterTodo]);
+  };
+
   // Yapılacak güncelle
   const updateTodo = (id, updates) => {
     const updatedTodos = todos.map((todo) =>
@@ -81,6 +97,38 @@ const TodoSection = () => {
 
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedTodos = todos.filter((todo) => todo.completed);
+
+  const renderTodoItem = (todo) => {
+    switch (todo.type) {
+      case "step":
+        return (
+          <StepTodoItem
+            key={todo.id}
+            todo={todo}
+            onUpdate={updateTodo}
+            onDelete={deleteTodo}
+          />
+        );
+      case "counter":
+        return (
+          <CounterTodoItem
+            key={todo.id}
+            todo={todo}
+            onUpdate={updateTodo}
+            onDelete={deleteTodo}
+          />
+        );
+      default:
+        return (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            onUpdate={updateTodo}
+            onDelete={deleteTodo}
+          />
+        );
+    }
+  };
 
   return (
     <motion.div
@@ -117,29 +165,22 @@ const TodoSection = () => {
               <List size={20} />
               Adım Adım
             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={addCounterTodo}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl hover:shadow-purple-500/25 flex items-center gap-2"
+            >
+              <Target size={20} />
+              Sayaçlı
+            </motion.button>
           </div>
         </div>
 
         {/* Aktif Yapılacaklar */}
         <div className="space-y-3">
           <AnimatePresence>
-            {activeTodos.map((todo) =>
-              todo.type === "step" ? (
-                <StepTodoItem
-                  key={todo.id}
-                  todo={todo}
-                  onUpdate={updateTodo}
-                  onDelete={deleteTodo}
-                />
-              ) : (
-                <TodoItem
-                  key={todo.id}
-                  todo={todo}
-                  onUpdate={updateTodo}
-                  onDelete={deleteTodo}
-                />
-              )
-            )}
+            {activeTodos.map((todo) => renderTodoItem(todo))}
           </AnimatePresence>
         </div>
 
@@ -167,23 +208,7 @@ const TodoSection = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="space-y-3"
                 >
-                  {completedTodos.map((todo) =>
-                    todo.type === "step" ? (
-                      <StepTodoItem
-                        key={todo.id}
-                        todo={todo}
-                        onUpdate={updateTodo}
-                        onDelete={deleteTodo}
-                      />
-                    ) : (
-                      <TodoItem
-                        key={todo.id}
-                        todo={todo}
-                        onUpdate={updateTodo}
-                        onDelete={deleteTodo}
-                      />
-                    )
-                  )}
+                  {completedTodos.map((todo) => renderTodoItem(todo))}
                 </motion.div>
               )}
             </AnimatePresence>
