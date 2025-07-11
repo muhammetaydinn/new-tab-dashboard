@@ -52,6 +52,10 @@ const StepTodoItem = ({ todo, onUpdate, onDelete }) => {
     onUpdate(todo.id, { steps: updatedSteps });
   };
 
+  const toggleCompleted = () => {
+    onUpdate(todo.id, { completed: !todo.completed });
+  };
+
   const completedSteps = todo.steps.filter((step) => step.completed).length;
   const progressPercentage = (completedSteps / todo.steps.length) * 100;
 
@@ -67,7 +71,7 @@ const StepTodoItem = ({ todo, onUpdate, onDelete }) => {
     >
       <div className="space-y-4">
         {/* Ana Todo Başlığı */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="flex-1 min-w-0">
             {isEditing ? (
               <input
@@ -108,6 +112,21 @@ const StepTodoItem = ({ todo, onUpdate, onDelete }) => {
               />
             </div>
           </div>
+
+          {/* Completed Status Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleCompleted}
+            className={`p-2 rounded-lg transition-all duration-200 ${
+              todo.completed
+                ? "bg-green-500 text-white"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+            }`}
+            title={todo.completed ? "Tamamlandı" : "Tamamlandı olarak işaretle"}
+          >
+            <Check size={16} />
+          </motion.button>
 
           {/* Delete Button */}
           <motion.button

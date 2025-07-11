@@ -1,12 +1,14 @@
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Trash2, Plus, Minus, Target, Edit } from "lucide-react";
+import { Trash2, Plus, Minus, Target, Edit, Check } from "lucide-react";
 
 const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.text);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [editTarget, setEditTarget] = useState(todo.targetCount.toString());
+  const [isEditingCurrent, setIsEditingCurrent] = useState(false);
+  const [editCurrent, setEditCurrent] = useState(todo.currentCount.toString());
 
   const incrementIntervalRef = useRef(null);
   const decrementIntervalRef = useRef(null);
@@ -46,6 +48,29 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
     }
   };
 
+  const handleCurrentChange = (e) => {
+    setEditCurrent(e.target.value);
+  };
+
+  const handleCurrentBlur = () => {
+    const newCurrent = parseInt(editCurrent) || 0;
+    const clampedCurrent = Math.max(0, Math.min(newCurrent, todo.targetCount));
+    if (clampedCurrent !== todo.currentCount) {
+      onUpdate(todo.id, { currentCount: clampedCurrent });
+    }
+    setIsEditingCurrent(false);
+  };
+
+  const handleCurrentKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleCurrentBlur();
+    }
+  };
+
+  const toggleCompleted = () => {
+    onUpdate(todo.id, { completed: !todo.completed });
+  };
+
   const increment = () => {
     const newCount = Math.min(todo.currentCount + 1, todo.targetCount);
     onUpdate(todo.id, { currentCount: newCount });
@@ -56,12 +81,12 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
     onUpdate(todo.id, { currentCount: newCount });
   };
 
-  // Otomatik artırma
+  // Otomatik artırma - daha hızlı
   const startIncrement = () => {
     increment();
     incrementIntervalRef.current = setInterval(() => {
       increment();
-    }, 150); // 150ms aralıklarla
+    }, 80); // 80ms aralıklarla (daha hızlı)
   };
 
   const stopIncrement = () => {
@@ -71,12 +96,12 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
     }
   };
 
-  // Otomatik azaltma
+  // Otomatik azaltma - daha hızlı
   const startDecrement = () => {
     decrement();
     decrementIntervalRef.current = setInterval(() => {
       decrement();
-    }, 150); // 150ms aralıklarla
+    }, 80); // 80ms aralıklarla (daha hızlı)
   };
 
   const stopDecrement = () => {
@@ -90,8 +115,19 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
   const isCompleted = todo.currentCount >= todo.targetCount;
 
   // Progress ile birlikte yeşil rengin yoğunluğunu artır
-  const greenOpacity = 0.05 + (progressPercentage / 100) * 0.25; // 0.05'ten 0.3'e
-  const greenIntensity = 0.1 + (progressPercentage / 100) * 0.2; // 0.1'den 0.3'e
+  const greenOpacity = 0.1 + (progressPercentage / 100) * 0.4; // 0.1'den 0.5'e
+  const greenIntensity = 0.15 + (progressPercentage / 100) * 0.35; // 0.15'ten 0.5'e
+
+  // Düzenleme sırasında gerçek zamanlı progress hesaplama
+  const currentProgressValue = isEditingCurrent
+    ? parseInt(editCurrent) || 0
+    : todo.currentCount;
+  const realTimeProgressPercentage =
+    (currentProgressValue / todo.targetCount) * 100;
+  const realTimeGreenOpacity = 0.1 + (realTimeProgressPercentage / 100) * 0.4;
+  const realTimeGreenIntensity =
+    0.15 + (realTimeProgressPercentage / 100) * 0.35;
+  const realTimeIsCompleted = currentProgressValue >= todo.targetCount;
 
   return (
     <motion.div
@@ -100,11 +136,10 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
       exit={{ opacity: 0, x: 20 }}
       layout
       className={`rounded-xl p-4 hover:bg-opacity-10 relative overflow-hidden ${
-        isCompleted ? "opacity-60" : ""
+        realTimeIsCompleted ? "opacity-60" : ""
       }`}
       style={{
-        background: `linear-gradient(90deg, rgba(34, 197, 94, ${greenOpacity}) ${progressPercentage}%, var(--glass-bg) ${progressPercentage}%)`,
-        border: "1px solid var(--glass-border)",
+        background: `linear-gradient(90deg, rgba(34, 197, 94, ${realTimeGreenOpacity}) ${realTimeProgressPercentage}%, var(--glass-bg) ${realTimeProgressPercentage}%)`,
         backdropFilter: "blur(16px)",
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       }}
@@ -113,13 +148,13 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
       <div
         className="absolute inset-0 transition-all duration-500 ease-out"
         style={{
-          background: `linear-gradient(90deg, rgba(34, 197, 94, ${greenIntensity}) ${progressPercentage}%, transparent ${progressPercentage}%)`,
+          background: `linear-gradient(90deg, rgba(34, 197, 94, ${realTimeGreenIntensity}) ${realTimeProgressPercentage}%, transparent ${realTimeProgressPercentage}%)`,
           zIndex: 0,
         }}
       />
 
       {/* Content */}
-      <div className="flex items-center gap-3 relative z-10">
+      <div className="flex items-center gap-4 relative z-10">
         {/* Ana Todo Başlığı */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
@@ -144,58 +179,31 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
           )}
         </div>
 
-        {/* Progress Percentage */}
-        <div className="text-center min-w-[50px]">
-          <div
-            className="text-sm font-bold"
-            style={{ color: "var(--text-primary)" }}
-          >
-            {Math.round(progressPercentage)}%
-          </div>
-        </div>
-
-        {/* Counter Controls */}
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onMouseDown={startDecrement}
-            onMouseUp={stopDecrement}
-            onMouseLeave={stopDecrement}
-            onTouchStart={startDecrement}
-            onTouchEnd={stopDecrement}
-            disabled={todo.currentCount <= 0}
-            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
-          >
-            <Minus size={16} />
-          </motion.button>
-
-          <div className="text-center min-w-[40px]">
-            <div
-              className="text-lg font-bold"
+        {/* Current/Target Display */}
+        <div className="flex items-center gap-2 min-w-[60px] justify-center">
+          {isEditingCurrent ? (
+            <input
+              type="number"
+              value={editCurrent}
+              onChange={handleCurrentChange}
+              onBlur={handleCurrentBlur}
+              onKeyPress={handleCurrentKeyPress}
+              className="w-8 bg-transparent border-none outline-none text-center text-lg font-bold"
               style={{ color: "var(--text-primary)" }}
+              min="0"
+              max={todo.targetCount}
+              autoFocus
+            />
+          ) : (
+            <div
+              className="text-lg font-bold cursor-pointer hover:text-primary-400 transition-colors"
+              style={{ color: "var(--text-primary)" }}
+              onClick={() => setIsEditingCurrent(true)}
+              title="Düzenlemek için tıklayın"
             >
               {todo.currentCount}
             </div>
-          </div>
-
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onMouseDown={startIncrement}
-            onMouseUp={stopIncrement}
-            onMouseLeave={stopIncrement}
-            onTouchStart={startIncrement}
-            onTouchEnd={stopIncrement}
-            disabled={todo.currentCount >= todo.targetCount}
-            className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
-          >
-            <Plus size={16} />
-          </motion.button>
-        </div>
-
-        {/* Target Display */}
-        <div className="flex items-center gap-2">
+          )}
           <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
             /
           </span>
@@ -206,7 +214,7 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
               onChange={handleTargetChange}
               onBlur={handleTargetBlur}
               onKeyPress={handleTargetKeyPress}
-              className="w-12 bg-transparent border-none outline-none text-center font-medium"
+              className="w-8 bg-transparent border-none outline-none text-center font-medium"
               style={{ color: "var(--text-primary)" }}
               min="1"
               autoFocus
@@ -224,6 +232,52 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
             </div>
           )}
         </div>
+
+        {/* Counter Controls - Horizontal */}
+        <div className="flex items-center gap-1">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onMouseDown={startDecrement}
+            onMouseUp={stopDecrement}
+            onMouseLeave={stopDecrement}
+            onTouchStart={startDecrement}
+            onTouchEnd={stopDecrement}
+            disabled={todo.currentCount <= 0}
+            className="p-1.5 rounded-md bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
+          >
+            <Minus size={14} />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onMouseDown={startIncrement}
+            onMouseUp={stopIncrement}
+            onMouseLeave={stopIncrement}
+            onTouchStart={startIncrement}
+            onTouchEnd={stopIncrement}
+            disabled={todo.currentCount >= todo.targetCount}
+            className="p-1.5 rounded-md bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 select-none"
+          >
+            <Plus size={14} />
+          </motion.button>
+        </div>
+
+        {/* Completed Status Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleCompleted}
+          className={`p-2 rounded-lg transition-all duration-200 ${
+            todo.completed
+              ? "bg-green-500 text-white"
+              : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+          }`}
+          title={todo.completed ? "Tamamlandı" : "Tamamlandı olarak işaretle"}
+        >
+          <Check size={16} />
+        </motion.button>
 
         {/* Delete Button */}
         <motion.button

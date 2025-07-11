@@ -39,3 +39,4 @@ coverage/
 workbox-*.js
 sw.js
 registerSW.js
+.vercel
