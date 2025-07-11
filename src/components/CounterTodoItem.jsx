@@ -62,11 +62,27 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       layout
-      className={`glass-effect rounded-xl p-4 hover:bg-opacity-10 ${
+      className={`rounded-xl p-4 hover:bg-opacity-10 relative overflow-hidden ${
         isCompleted ? "opacity-60" : ""
       }`}
+      style={{
+        background: `linear-gradient(90deg, rgba(34, 197, 94, 0.1) ${progressPercentage}%, var(--glass-bg) ${progressPercentage}%)`,
+        border: "1px solid var(--glass-border)",
+        backdropFilter: "blur(16px)",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+      }}
     >
-      <div className="flex items-center gap-3">
+      {/* Progress Background */}
+      <div
+        className="absolute inset-0 transition-all duration-500 ease-out"
+        style={{
+          background: `linear-gradient(90deg, rgba(34, 197, 94, 0.15) ${progressPercentage}%, transparent ${progressPercentage}%)`,
+          zIndex: 0,
+        }}
+      />
+
+      {/* Content */}
+      <div className="flex items-center gap-3 relative z-10">
         {/* Ana Todo Başlığı */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
@@ -91,6 +107,16 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
           )}
         </div>
 
+        {/* Progress Percentage */}
+        <div className="text-center min-w-[50px]">
+          <div
+            className="text-sm font-bold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {Math.round(progressPercentage)}%
+          </div>
+        </div>
+
         {/* Counter Controls */}
         <div className="flex items-center gap-2">
           <motion.button
@@ -103,7 +129,7 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
             <Minus size={16} />
           </motion.button>
 
-          <div className="text-center min-w-[60px]">
+          <div className="text-center min-w-[40px]">
             <div
               className="text-lg font-bold"
               style={{ color: "var(--text-primary)" }}
@@ -152,16 +178,6 @@ const CounterTodoItem = ({ todo, onUpdate, onDelete }) => {
               <Edit size={12} style={{ color: "var(--text-secondary)" }} />
             </div>
           )}
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-primary-400 to-primary-600"
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercentage}%` }}
-            transition={{ duration: 0.5 }}
-          />
         </div>
 
         {/* Delete Button */}
